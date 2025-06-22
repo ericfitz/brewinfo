@@ -425,6 +425,130 @@ class OptimizedBrewAnalyzer:
                 f"  Total runtime dependencies: {total_runtime_deps}", file=output_file
             )
 
+    def find_root_packages(self) -> Set[str]:
+        """Find packages that are not dependencies of any other package."""
+        all_dependencies = set()
+
+        # Collect all runtime dependencies
+        for pkg_info in self.packages.values():
+            all_dependencies.update(pkg_info.runtime_dependencies)
+
+        # Root packages are those that exist but are not dependencies of others
+        root_packages = set(self.packages.keys()) - all_dependencies
+        return root_packages
+
+    def build_dependency_tree(self) -> Dict[str, List[str]]:
+        """Build a tree structure showing runtime dependencies."""
+        tree = {}
+
+        for pkg_name, pkg_info in self.packages.items():
+            # Only include runtime dependencies that are actually installed
+            installed_deps = [
+                dep for dep in pkg_info.runtime_dependencies if dep in self.packages
+            ]
+            tree[pkg_name] = installed_deps
+
+        return tree
+
+    def print_tree_recursive(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+        self,
+        package: str,
+        tree: Dict[str, List[str]],
+        visited: Set[str],
+        prefix: str = "",
+        is_last: bool = True,
+        output_file: Optional[TextIO] = None,
+    ):
+        """Recursively print the dependency tree for a package."""
+        if package in visited:
+            # Handle circular dependencies
+            line = f"{prefix}{'└── ' if is_last else '├── '}{package} (circular)"
+            print(line)
+            if output_file:
+                print(line, file=output_file)
+            return
+
+        visited.add(package)
+
+        # Print current package
+        status = "✅" if package in self.installed_packages else "❌"
+        line = f"{prefix}{'└── ' if is_last else '├── '}{status} {package}"
+        print(line)
+        if output_file:
+            print(line, file=output_file)
+
+        # Get dependencies for this package
+        dependencies = tree.get(package, [])
+
+        # Print each dependency
+        for i, dep in enumerate(dependencies):
+            is_last_dep = i == len(dependencies) - 1
+            new_prefix = prefix + ("    " if is_last else "│   ")
+            self.print_tree_recursive(
+                dep, tree, visited.copy(), new_prefix, is_last_dep, output_file
+            )
+
+    def print_dependency_tree(self, output_file: Optional[TextIO] = None):
+        """Print the runtime dependency tree."""
+        if not self.packages:
+            print("No package information available.")
+            return
+
+        print("\nRuntime Dependency Tree:")
+        print("=" * 50)
+
+        if output_file:
+            print("\nRuntime Dependency Tree:", file=output_file)
+            print("=" * 50, file=output_file)
+
+        # Build the dependency tree
+        tree = self.build_dependency_tree()
+
+        # Find root packages (packages that nothing else depends on)
+        root_packages = self.find_root_packages()
+
+        if not root_packages:
+            print("No root packages found (all packages are dependencies of others)")
+            if output_file:
+                print(
+                    "No root packages found (all packages are dependencies of others)",
+                    file=output_file,
+                )
+            return
+
+        # Sort root packages for consistent output
+        sorted_roots = sorted(root_packages)
+
+        print(f"Found {len(sorted_roots)} root packages:\n")
+        if output_file:
+            print(f"Found {len(sorted_roots)} root packages:\n", file=output_file)
+
+        # Print tree for each root package
+        for i, root_package in enumerate(sorted_roots):
+            is_last_root = i == len(sorted_roots) - 1
+            visited = set()
+
+            # Print root package without prefix for the first level
+            status = "✅" if root_package in self.installed_packages else "❌"
+            line = f"{status} {root_package}"
+            print(line)
+            if output_file:
+                print(line, file=output_file)
+
+            # Print its dependencies
+            dependencies = tree.get(root_package, [])
+            for j, dep in enumerate(dependencies):
+                is_last_dep = j == len(dependencies) - 1
+                self.print_tree_recursive(
+                    dep, tree, visited, "", is_last_dep, output_file
+                )
+
+            # Add spacing between root packages (except for the last one)
+            if not is_last_root:
+                print()
+                if output_file:
+                    print(file=output_file)
+
 
 def main():
     """Main entry point."""
@@ -451,6 +575,16 @@ def main():
         default=50,
         help="Batch size for CLI queries (default: 50)",
     )
+    parser.add_argument(
+        "--tree",
+        action="store_true",
+        help="Display runtime dependencies as a tree instead of table",
+    )
+    parser.add_argument(
+        "--tree-only",
+        action="store_true",
+        help="Display only the dependency tree (no table or summary)",
+    )
 
     args = parser.parse_args()
     analyzer = OptimizedBrewAnalyzer(use_api=args.api, batch_size=args.batch_size)
@@ -464,15 +598,31 @@ def main():
             try:
                 with open(args.output, "w", encoding="utf-8") as output_file:
                     print(f"Writing output to {args.output}...")
-                    analyzer.print_table(output_file)
-                    analyzer.print_summary(output_file)
+
+                    if args.tree_only:
+                        analyzer.print_dependency_tree(output_file)
+                    elif args.tree:
+                        analyzer.print_table(output_file)
+                        analyzer.print_summary(output_file)
+                        analyzer.print_dependency_tree(output_file)
+                    else:
+                        analyzer.print_table(output_file)
+                        analyzer.print_summary(output_file)
+
                 print(f"Output saved to {args.output}")
             except IOError as e:
                 print(f"Error opening output file {args.output}: {e}", file=sys.stderr)
                 sys.exit(1)
         else:
-            analyzer.print_table()
-            analyzer.print_summary()
+            if args.tree_only:
+                analyzer.print_dependency_tree()
+            elif args.tree:
+                analyzer.print_table()
+                analyzer.print_summary()
+                analyzer.print_dependency_tree()
+            else:
+                analyzer.print_table()
+                analyzer.print_summary()
 
     except KeyboardInterrupt:
         print("\nOperation cancelled by user.")

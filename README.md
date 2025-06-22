@@ -10,6 +10,23 @@ A Python program that analyzes installed Homebrew packages and casks, displaying
 - Displays reverse dependencies (which packages depend on each package)
 - Uses green checkmarks (✅) and red X marks (❌) to indicate dependency status
 - Provides summary statistics
+- **NEW**: Runtime dependency tree view showing hierarchical package relationships
+
+## Tree View Feature
+
+The new tree view displays runtime dependencies in a hierarchical format:
+
+- **Root packages**: Packages that are not dependencies of any other installed package appear at the top level
+- **Dependencies**: Each package's runtime dependencies are shown as child nodes
+- **Tree structure**: Uses Unicode box-drawing characters (├──, └──, │) for clear visual hierarchy
+- **Status indicators**: Shows ✅ for installed dependencies and ❌ for missing ones
+- **Circular dependency handling**: Detects and marks circular dependencies to prevent infinite loops
+
+### Tree View Options
+
+- `--tree`: Display both the regular table and the dependency tree
+- `--tree-only`: Display only the dependency tree (no table or summary)
+- Works with all other options (`--api`, `--output`, etc.)
 
 ## Requirements
 
@@ -46,6 +63,15 @@ python3 brewinfo_optimized.py --api -o output.txt
 
 # Adjust batch size for CLI method
 python3 brewinfo_optimized.py --batch-size 100
+
+# Display runtime dependency tree in addition to table
+python3 brewinfo_optimized.py --tree
+
+# Display only the dependency tree (no table)
+python3 brewinfo_optimized.py --tree-only
+
+# Save tree output to file
+python3 brewinfo_optimized.py --tree-only -o dependency_tree.txt
 ```
 
 ### Performance Comparison
@@ -74,13 +100,33 @@ The table uses the following status indicators:
 - ✅ Green checkmark: Dependency is installed
 - ❌ Red X: Dependency is not installed
 
-Example output:
+Example table output:
 
 ```
 Package      | Description                    | Used By    | Build Deps        | Runtime Deps
 -------------|--------------------------------|------------|-------------------|------------------
 git          | Distributed revision control  | node, vim  | ✅ openssl, ❌ foo | ✅ pcre2
 python@3.11  | Interpreted programming lang  | pip, numpy |                   | ✅ openssl
+```
+
+Example tree output (`--tree-only`):
+
+```
+Runtime Dependency Tree:
+==================================================
+Found 3 root packages:
+
+✅ git
+├── ✅ pcre2
+└── ✅ openssl
+
+✅ node
+├── ✅ python@3.11
+│   └── ✅ openssl
+└── ✅ libuv
+
+✅ vim
+└── ✅ ncurses
 ```
 
 ## Implementation Details

@@ -34,6 +34,26 @@ The new tree view displays runtime dependencies in a hierarchical format:
 - Homebrew installed on macOS
 - For optimized version: `requests` library (install with `pip install -r requirements.txt`)
 
+### Python Version Management
+
+This project uses pyenv for Python version management and virtual environments for dependency isolation:
+
+- **Recommended Python versions**: 3.11+, 3.12+, or 3.13+ (via pyenv)
+- **Virtual environment**: Isolated dependencies using Python's built-in venv
+- **Project-specific version**: Set via `.python-version` file
+
+#### Quick Setup
+
+```bash
+# Use the provided setup script
+./setup_venv.sh
+
+# Or manually:
+python -m venv venv
+source venv/bin/activate
+pip install --no-user -r requirements.txt
+```
+
 ## Usage
 
 ### Original Version
@@ -46,32 +66,38 @@ python3 brewinfo.py
 
 ### Optimized Version (Recommended)
 
-For significantly faster performance, use the optimized version:
+For significantly faster performance, use the optimized version with virtual environment:
 
 ```bash
-# Install dependencies first
-pip install -r requirements.txt
+# Set up virtual environment (first time only)
+./setup_venv.sh
+
+# Activate virtual environment
+source venv/bin/activate
 
 # Use batch processing (3-5x faster)
-python3 brewinfo_optimized.py
+python brewinfo_optimized.py
 
 # Use API method (5-10x faster, requires internet)
-python3 brewinfo_optimized.py --api
+python brewinfo_optimized.py --api
 
 # Save output to file
-python3 brewinfo_optimized.py --api -o output.txt
+python brewinfo_optimized.py --api -o output.txt
 
 # Adjust batch size for CLI method
-python3 brewinfo_optimized.py --batch-size 100
+python brewinfo_optimized.py --batch-size 100
 
 # Display runtime dependency tree in addition to table
-python3 brewinfo_optimized.py --tree
+python brewinfo_optimized.py --tree
 
 # Display only the dependency tree (no table)
-python3 brewinfo_optimized.py --tree-only
+python brewinfo_optimized.py --tree-only
 
 # Save tree output to file
-python3 brewinfo_optimized.py --tree-only -o dependency_tree.txt
+python brewinfo_optimized.py --tree-only -o dependency_tree.txt
+
+# Deactivate virtual environment when done
+deactivate
 ```
 
 ### Performance Comparison

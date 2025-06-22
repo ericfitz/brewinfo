@@ -6,6 +6,8 @@
 !README.md
 !requirements.txt
 !.gitignore
+!.python-version
+!setup_venv.sh
 
 # Explicitly ignore Python cache files
 __pycache__/
@@ -13,3 +15,8 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+
+# Virtual environments
+venv/
+env/
+ENV/

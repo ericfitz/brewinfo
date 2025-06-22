@@ -6,3 +6,10 @@
 !README.md
 !requirements.txt
 !.gitignore
+
+# Explicitly ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python

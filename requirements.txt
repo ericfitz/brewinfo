@@ -1,2 +1,5 @@
-# No external dependencies required - uses only Python standard library
+# Dependencies for optimized version
+requests>=2.25.0
+
+# Original version uses only Python standard library
 # Python 3.6+ required for dataclasses and f-strings

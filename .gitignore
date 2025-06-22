@@ -1,0 +1,8 @@
+# default ignore
+*
+
+# add files we like
+!*.py
+!README.md
+!requirements.txt
+!.gitignore

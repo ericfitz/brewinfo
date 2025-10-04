@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.8"
+# dependencies = [
+#     "requests>=2.25.0",
+# ]
+# ///
 """
 Performance comparison between original and optimized Homebrew analyzers.
 """
